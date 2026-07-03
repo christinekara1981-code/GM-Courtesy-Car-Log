@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Courtesy Car Log</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d7dde5;
+      --panel: #ffffff;
+      --page: #f3f5f1;
+      --accent: #78be20;
+      --accent-dark: #4f8314;
+      --charcoal: #232625;
+      --soft: #f8faf7;
+      --ok: #11845b;
+      --warn: #b54708;
+      --danger: #b42318;
+      --shadow: 0 18px 46px rgba(29, 36, 48, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      background: var(--charcoal);
+      color: #fff;
+      border-bottom: 4px solid var(--accent);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 182px;
+      height: 56px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 6px;
+      padding: 6px;
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #d8e8d0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 6px;
+      color: #eef4ff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #7cd4a7;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    form,
+    aside {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    form {
+      padding: 22px;
+    }
+
+    .section-title {
+      margin: 0 0 16px;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: #344054;
+    }
+
+    .form-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .form-head .section-title {
+      margin-bottom: 4px;
+    }
+
+    .form-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .transaction-badge {
+      min-width: 178px;
+      border: 1px solid #c9d7bc;
+      background: #f4faef;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .transaction-badge span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .transaction-badge strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--charcoal);
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    label {
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #c8d0dc;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 9px 11px;
+      outline: none;
+    }
+
+    input[readonly] {
+      background: #f4f7f2;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(120, 190, 32, 0.18);
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .check-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid #c8d0dc;
+      border-radius: 6px;
+      background: var(--soft);
+      font-weight: 700;
+      color: #344054;
+      cursor: pointer;
+    }
+
+    .check-card input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 9px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .secondary {
+      background: #fff;
+      border-color: #b9c2cf;
+      color: #344054;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #111;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+      color: #fff;
+    }
+
+    button:disabled {
+      opacity: 0.62;
+      cursor: wait;
+    }
+
+    aside {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .summary-item {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .summary-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      margin-top: 4px;
+      color: var(--ink);
+      font-weight: 700;
+      min-height: 20px;
+      overflow-wrap: anywhere;
+    }
+
+    .message {
+      margin-top: 16px;
+      min-height: 44px;
+      display: none;
+      align-items: center;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-weight: 700;
+    }
+
+    .message.show {
+      display: flex;
+    }
+
+    .message.ok {
+      background: #e7f6ee;
+      color: var(--ok);
+      border: 1px solid #a6dfc1;
+    }
+
+    .message.error {
+      background: #fef3f2;
+      color: var(--danger);
+      border: 1px solid #fecdca;
+    }
+
+    .config-warning {
+      margin-bottom: 16px;
+      border: 1px solid #fedf89;
+      background: #fffaeb;
+      color: var(--warn);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      display: none;
+    }
+
+    .config-warning.show {
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .span-3,
+      .span-4,
+      .span-6,
+      .span-8 {
+        grid-column: span 12;
+      }
+
+      .checks {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .brand-lockup {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .brand-logo {
+        width: 210px;
+        max-width: 100%;
+      }
+
+      .form-head {
+        flex-direction: column;
+      }
+
+      .transaction-badge {
+        width: 100%;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      form {
+        padding: 16px;
+      }
+
+      .actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="header-inner">
+        <div class="brand-lockup">
+          <img class="brand-logo" src="green-motors-logo.png" alt="Green Motors">
+          <div class="brand-copy">
+            <h1>Courtesy Car Monitoring</h1>
+            <p class="subtitle">MasterData entry form</p>
+          </div>
+        </div>
+        <div class="status-pill"><span class="status-dot"></span><span id="connectionText">Ready for Google Sheet</span></div>
+      </div>
+    </header>
+
+    <main>
+      <div id="configWarning" class="config-warning">
+        Live save is not connected yet. Paste your Google Apps Script Web App URL into the form file where it says WEB_APP_URL.
+      </div>
+
+      <div class="workspace">
+        <form id="courtesyForm">
+          <div class="form-head">
+            <div>
+              <p class="section-title">Log Entry</p>
+              <p class="form-subtitle">Issue, return, and document handover details</p>
+            </div>
+            <div class="transaction-badge">
+              <span>Transaction No.</span>
+              <strong id="transactionDisplay">GM_0000001</strong>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="field span-3">
+              <label for="transactionNumber">Transaction Number</label>
+              <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001" readonly>
+            </div>
+
+            <div class="field span-3">
+              <label for="date">Date</label>
+              <input id="date" name="date" type="date" required>
+            </div>
+
+            <div class="field span-3">
+              <label for="courtesyCar">Courtesy Car</label>
+              <input id="courtesyCar" name="courtesyCar" list="courtesyCarList" required>
+              <datalist id="courtesyCarList"></datalist>
+            </div>
+
+            <div class="field span-3">
+              <label for="customerName">Customer / User Name</label>
+              <input id="customerName" name="customerName" type="text" required>
+            </div>
+
+            <div class="field span-4">
+              <label for="mobileNo">Mobile No.</label>
+              <input id="mobileNo" name="mobileNo" type="tel" inputmode="tel" placeholder="+971...">
+            </div>
+
+            <div class="field span-4">
+              <label for="vehiclePlateNo">Vehicle / Plate No.</label>
+              <input id="vehiclePlateNo" name="vehiclePlateNo" type="text" placeholder="Customer vehicle or plate">
+            </div>
+
+            <div class="field span-4">
+              <label for="jobCardNo">Job Card No.</label>
+              <input id="jobCardNo" name="jobCardNo" type="text">
+            </div>
+
+            <div class="field span-3">
+              <label for="mileage">Mileage</label>
+              <input id="mileage" name="mileage" type="number" min="0" step="1">
+            </div>
+
+            <div class="field span-3">
+              <label for="dateTimeReleased">Date / Time Released</label>
+              <input id="dateTimeReleased" name="dateTimeReleased" type="datetime-local">
+            </div>
+
+            <div class="field span-3">
+              <label for="dateTimeReturned">Date / Time Returned</label>
+              <input id="dateTimeReturned" name="dateTimeReturned" type="datetime-local">
+            </div>
+
+            <div class="field span-3">
+              <label for="serviceAdvisor">Service Advisor</label>
+              <input id="serviceAdvisor" name="serviceAdvisor" list="advisorList">
+              <datalist id="advisorList"></datalist>
+            </div>
+
+            <div class="field span-12">
+              <label for="remarks">Remarks</label>
+              <textarea id="remarks" name="remarks" placeholder="Optional notes"></textarea>
+            </div>
+          </div>
+
+          <div class="checks">
+            <label class="check-card"><input name="eid" type="checkbox"> EID</label>
+            <label class="check-card"><input name="driversLicense" type="checkbox"> Driver's License</label>
+            <label class="check-card"><input name="releaseForm" type="checkbox"> Release Form</label>
+          </div>
+
+          <div class="actions">
+            <button class="secondary" type="reset">Clear</button>
+            <button id="saveButton" class="primary" type="submit">Save to MasterData</button>
+          </div>
+
+          <div id="message" class="message" role="status" aria-live="polite"></div>
+        </form>
+
+        <aside aria-label="Entry summary">
+          <p class="section-title">Current Entry</p>
+          <div class="summary-item">
+            <div class="summary-label">Transaction</div>
+            <div id="summaryTransaction" class="summary-value">GM_0000001</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Courtesy Car</div>
+            <div id="summaryCar" class="summary-value">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Customer / User</div>
+            <div id="summaryCustomer" class="summary-value">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Released</div>
+            <div id="summaryReleased" class="summary-value">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Returned</div>
+            <div id="summaryReturned" class="summary-value">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Documents</div>
+            <div id="summaryDocs" class="summary-value">None selected</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const WEB_APP_URL = window.COURTESY_CAR_WEB_APP_URL || '';
+
+    const form = document.getElementById('courtesyForm');
+    const message = document.getElementById('message');
+    const saveButton = document.getElementById('saveButton');
+    const configWarning = document.getElementById('configWarning');
+    const connectionText = document.getElementById('connectionText');
+    const courtesyCarList = document.getElementById('courtesyCarList');
+    const advisorList = document.getElementById('advisorList');
+    const transactionInput = document.getElementById('transactionNumber');
+    const transactionDisplay = document.getElementById('transactionDisplay');
+
+    const FALLBACK_COURTESY_CARS = [
+      '15886/9 FENGO...',
+      '31258/18 FENG...',
+      '46106 / SERES 7...',
+      '99555'
+    ];
+
+    const FALLBACK_SERVICE_ADVISORS = [
+      'Sir Elli',
+      'Rana',
+      'Heba'
+    ];
+
+    const summaryMap = {
+      transactionNumber: document.getElementById('summaryTransaction'),
+      courtesyCar: document.getElementById('summaryCar'),
+      customerName: document.getElementById('summaryCustomer'),
+      dateTimeReleased: document.getElementById('summaryReleased'),
+      dateTimeReturned: document.getElementById('summaryReturned')
+    };
+
+    function setToday() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function hasLiveUrl() {
+      return WEB_APP_URL && !WEB_APP_URL.includes('PASTE_YOUR');
+    }
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message show ${type}`;
+    }
+
+    function fillDatalist(listElement, values) {
+      listElement.innerHTML = '';
+      values
+        .filter(value => String(value || '').trim())
+        .forEach(value => {
+          const option = document.createElement('option');
+          option.value = value;
+          listElement.appendChild(option);
+        });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '-';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString([], {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function getPayload() {
+      const data = new FormData(form);
+      return {
+        date: data.get('date') || '',
+        transactionNumber: data.get('transactionNumber') || '',
+        courtesyCar: data.get('courtesyCar') || '',
+        customerName: data.get('customerName') || '',
+        mobileNo: data.get('mobileNo') || '',
+        vehiclePlateNo: data.get('vehiclePlateNo') || '',
+        eid: data.has('eid'),
+        driversLicense: data.has('driversLicense'),
+        releaseForm: data.has('releaseForm'),
+        jobCardNo: data.get('jobCardNo') || '',
+        mileage: data.get('mileage') || '',
+        dateTimeReleased: data.get('dateTimeReleased') || '',
+        dateTimeReturned: data.get('dateTimeReturned') || '',
+        serviceAdvisor: data.get('serviceAdvisor') || '',
+        remarks: data.get('remarks') || ''
+      };
+    }
+
+    function updateSummary() {
+      const payload = getPayload();
+      summaryMap.transactionNumber.textContent = payload.transactionNumber || 'GM_0000001';
+      summaryMap.courtesyCar.textContent = payload.courtesyCar || '-';
+      summaryMap.customerName.textContent = payload.customerName || '-';
+      summaryMap.dateTimeReleased.textContent = formatDateTime(payload.dateTimeReleased);
+      summaryMap.dateTimeReturned.textContent = formatDateTime(payload.dateTimeReturned);
+
+      const docs = [];
+      if (payload.eid) docs.push('EID');
+      if (payload.driversLicense) docs.push("Driver's License");
+      if (payload.releaseForm) docs.push('Release Form');
+      document.getElementById('summaryDocs').textContent = docs.length ? docs.join(', ') : 'None selected';
+    }
+
+    async function saveEntry(payload) {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (!result.ok) {
+        throw new Error(result.error || 'Google Sheet save failed.');
+      }
+      return result;
+    }
+
+    function setTransactionNumber(value) {
+      const transactionNumber = value || 'GM_0000001';
+      transactionInput.value = transactionNumber;
+      transactionDisplay.textContent = transactionNumber;
+      updateSummary();
+    }
+
+    function clearEntryFields() {
+      document.getElementById('courtesyCar').value = '';
+      document.getElementById('customerName').value = '';
+      document.getElementById('serviceAdvisor').value = '';
+    }
+
+    async function loadNextTransactionNumber() {
+      setTransactionNumber('GM_0000001');
+
+      if (!hasLiveUrl()) return;
+
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=nextTransaction`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.error || 'Transaction number loading failed.');
+        setTransactionNumber(result.transactionNumber);
+      } catch (error) {
+        connectionText.textContent = 'Using draft number';
+      }
+    }
+
+    async function loadDropdownOptions() {
+      fillDatalist(courtesyCarList, FALLBACK_COURTESY_CARS);
+      fillDatalist(advisorList, FALLBACK_SERVICE_ADVISORS);
+
+      if (!hasLiveUrl()) return;
+
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=lists`, {
+          method: 'GET',
+          mode: 'cors'
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.error || 'List loading failed.');
+
+        if (Array.isArray(result.courtesyCars) && result.courtesyCars.length) {
+          fillDatalist(courtesyCarList, result.courtesyCars);
+        }
+        if (Array.isArray(result.serviceAdvisors) && result.serviceAdvisors.length) {
+          fillDatalist(advisorList, result.serviceAdvisors);
+        }
+      } catch (error) {
+        connectionText.textContent = 'Using default lists';
+      }
+    }
+
+    form.addEventListener('input', updateSummary);
+    form.addEventListener('reset', () => {
+      window.setTimeout(() => {
+        setToday();
+        clearEntryFields();
+        loadNextTransactionNumber();
+        updateSummary();
+        message.className = 'message';
+        message.textContent = '';
+      }, 0);
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+
+      if (!hasLiveUrl()) {
+        showMessage('Form is ready. Add the Apps Script Web App URL to enable live Google Sheet saving.', 'error');
+        return;
+      }
+
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+      showMessage('Saving entry to MasterData...', 'ok');
+
+      try {
+        const result = await saveEntry(getPayload());
+        showMessage(`Saved ${result.transactionNumber || 'entry'} to MasterData row ${result.row}.`, 'ok');
+        form.reset();
+        clearEntryFields();
+        loadNextTransactionNumber();
+      } catch (error) {
+        showMessage(error.message || 'Could not save this entry.', 'error');
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save to MasterData';
+      }
+    });
+
+    if (!hasLiveUrl()) {
+      configWarning.classList.add('show');
+      connectionText.textContent = 'Setup required';
+    }
+
+    setToday();
+    loadNextTransactionNumber();
+    loadDropdownOptions();
+    updateSummary();
+  </script>
+</body>
+</html>
