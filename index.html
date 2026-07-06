@@ -501,7 +501,7 @@
           </div>
           <div class="grid">
             <div class="field span-3">
-              <label for="transactionNumber">Transaction Number</label>
+              <label for="transactionNumber">Search / Transaction Number</label>
               <div class="search-control">
                 <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001">
                 <button id="searchButton" class="search-button" type="button">Search</button>
@@ -759,15 +759,15 @@
       return result;
     }
 
-    async function searchEntry(transactionNumber) {
-      const response = await fetch(`${WEB_APP_URL}?action=search&transactionNumber=${encodeURIComponent(transactionNumber)}`, {
+    async function searchEntry(searchTerm) {
+      const response = await fetch(`${WEB_APP_URL}?action=search&searchTerm=${encodeURIComponent(searchTerm)}`, {
         method: 'GET',
         mode: 'cors'
       });
 
       const result = await response.json();
       if (!result.ok) {
-        throw new Error(result.error || 'Transaction number not found.');
+        throw new Error(result.error || 'No matching entry found.');
       }
       return result.entry;
     }
@@ -877,23 +877,23 @@
         return;
       }
 
-      const transactionNumber = transactionInput.value.trim();
-      if (!transactionNumber) {
-        showMessage('Enter a transaction number to search.', 'error');
+      const searchTerm = transactionInput.value.trim();
+      if (!searchTerm) {
+        showMessage('Enter transaction, mobile, customer, vehicle/plate, or job card to search.', 'error');
         return;
       }
 
       searchButton.disabled = true;
       searchButton.textContent = '...';
-      showMessage(`Searching ${transactionNumber}...`, 'ok');
+      showMessage(`Searching ${searchTerm}...`, 'ok');
 
       try {
-        const entry = await searchEntry(transactionNumber);
+        const entry = await searchEntry(searchTerm);
         loadEntryIntoForm(entry);
-        showMessage(`Loaded ${transactionNumber}. Edit Date / Time Returned, then click Update.`, 'ok');
+        showMessage(`Loaded ${entry.transactionNumber}. Edit Date / Time Returned, then click Update.`, 'ok');
       } catch (error) {
         setEditReturnMode(false);
-        showMessage(error.message || 'Transaction number not found.', 'error');
+        showMessage(error.message || 'No matching entry found.', 'error');
       } finally {
         searchButton.disabled = false;
         searchButton.textContent = 'Search';
