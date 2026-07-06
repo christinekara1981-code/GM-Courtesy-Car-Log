@@ -126,6 +126,39 @@
       align-items: start;
     }
 
+    .start-panel {
+      margin-bottom: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .start-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .start-panel-head .section-title {
+      margin-bottom: 4px;
+    }
+
+    .start-actions {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .search-field {
+      display: grid;
+      gap: 7px;
+    }
+
     form,
     aside {
       background: var(--panel);
@@ -233,16 +266,6 @@
       background: #f4f7f2;
       color: #344054;
       font-weight: 700;
-    }
-
-    .search-control {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
-    }
-
-    .search-control input {
-      min-width: 0;
     }
 
     .search-button {
@@ -422,6 +445,14 @@
       .checks {
         grid-template-columns: 1fr;
       }
+
+      .start-panel-head {
+        flex-direction: column;
+      }
+
+      .start-actions {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 560px) {
@@ -487,6 +518,23 @@
         Live save is not connected yet. Paste your Google Apps Script Web App URL into the form file where it says WEB_APP_URL.
       </div>
 
+      <section class="start-panel" aria-label="Start entry">
+        <div class="start-panel-head">
+          <div>
+            <p class="section-title">Start</p>
+            <p class="form-subtitle">Search existing log or create a new courtesy car entry</p>
+          </div>
+        </div>
+        <div class="start-actions">
+          <div class="search-field">
+            <label for="searchTerm">Search by transaction, mobile, customer, vehicle/plate, or job card</label>
+            <input id="searchTerm" type="search" placeholder="GM_0000001, mobile, name, plate, or job card">
+          </div>
+          <button id="searchButton" class="search-button" type="button">Search</button>
+          <button id="newEntryButton" class="primary" type="button">New Entry</button>
+        </div>
+      </section>
+
       <div class="workspace">
         <form id="courtesyForm">
           <div class="form-head">
@@ -501,11 +549,8 @@
           </div>
           <div class="grid">
             <div class="field span-3">
-              <label for="transactionNumber">Search / Transaction Number</label>
-              <div class="search-control">
-                <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001">
-                <button id="searchButton" class="search-button" type="button">Search</button>
-              </div>
+              <label for="transactionNumber">Transaction Number</label>
+              <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001" readonly>
             </div>
 
             <div class="field span-3">
@@ -619,6 +664,8 @@
     const message = document.getElementById('message');
     const saveButton = document.getElementById('saveButton');
     const searchButton = document.getElementById('searchButton');
+    const newEntryButton = document.getElementById('newEntryButton');
+    const searchTermInput = document.getElementById('searchTerm');
     const configWarning = document.getElementById('configWarning');
     const connectionText = document.getElementById('connectionText');
     const courtesyCarList = document.getElementById('courtesyCarList');
@@ -815,6 +862,18 @@
       document.getElementById('serviceAdvisor').value = '';
     }
 
+    function startNewEntry() {
+      form.reset();
+      setEditReturnMode(false);
+      searchTermInput.value = '';
+      setToday();
+      clearEntryFields();
+      loadNextTransactionNumber();
+      updateSummary();
+      message.className = 'message';
+      message.textContent = '';
+    }
+
     async function loadNextTransactionNumber() {
       setTransactionNumber('GM_0000001');
 
@@ -877,7 +936,7 @@
         return;
       }
 
-      const searchTerm = transactionInput.value.trim();
+      const searchTerm = searchTermInput.value.trim();
       if (!searchTerm) {
         showMessage('Enter transaction, mobile, customer, vehicle/plate, or job card to search.', 'error');
         return;
@@ -890,6 +949,7 @@
       try {
         const entry = await searchEntry(searchTerm);
         loadEntryIntoForm(entry);
+        searchTermInput.value = searchTerm;
         showMessage(`Loaded ${entry.transactionNumber}. Edit Date / Time Returned, then click Update.`, 'ok');
       } catch (error) {
         setEditReturnMode(false);
@@ -899,6 +959,15 @@
         searchButton.textContent = 'Search';
       }
     });
+
+    searchTermInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        searchButton.click();
+      }
+    });
+
+    newEntryButton.addEventListener('click', startNewEntry);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
