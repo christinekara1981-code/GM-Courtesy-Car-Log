@@ -235,6 +235,24 @@
       font-weight: 700;
     }
 
+    .search-control {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .search-control input {
+      min-width: 0;
+    }
+
+    .search-button {
+      min-width: 86px;
+      border-color: #9fb38e;
+      background: #eef6e8;
+      color: #24351a;
+      padding-inline: 12px;
+    }
+
     textarea {
       min-height: 84px;
       resize: vertical;
@@ -484,7 +502,10 @@
           <div class="grid">
             <div class="field span-3">
               <label for="transactionNumber">Transaction Number</label>
-              <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001" readonly>
+              <div class="search-control">
+                <input id="transactionNumber" name="transactionNumber" type="text" value="GM_0000001">
+                <button id="searchButton" class="search-button" type="button">Search</button>
+              </div>
             </div>
 
             <div class="field span-3">
@@ -597,12 +618,14 @@
     const form = document.getElementById('courtesyForm');
     const message = document.getElementById('message');
     const saveButton = document.getElementById('saveButton');
+    const searchButton = document.getElementById('searchButton');
     const configWarning = document.getElementById('configWarning');
     const connectionText = document.getElementById('connectionText');
     const courtesyCarList = document.getElementById('courtesyCarList');
     const advisorList = document.getElementById('advisorList');
     const transactionInput = document.getElementById('transactionNumber');
     const transactionDisplay = document.getElementById('transactionDisplay');
+    let editReturnMode = false;
 
     const FALLBACK_COURTESY_CARS = [
       '15886/9 FENGO...',
@@ -717,6 +740,68 @@
       return result;
     }
 
+    async function updateReturnedDateTime(payload) {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          mode: 'updateReturn',
+          transactionNumber: payload.transactionNumber,
+          dateTimeReturned: payload.dateTimeReturned
+        })
+      });
+
+      const result = await response.json();
+      if (!result.ok) {
+        throw new Error(result.error || 'Return date/time update failed.');
+      }
+      return result;
+    }
+
+    async function searchEntry(transactionNumber) {
+      const response = await fetch(`${WEB_APP_URL}?action=search&transactionNumber=${encodeURIComponent(transactionNumber)}`, {
+        method: 'GET',
+        mode: 'cors'
+      });
+
+      const result = await response.json();
+      if (!result.ok) {
+        throw new Error(result.error || 'Transaction number not found.');
+      }
+      return result.entry;
+    }
+
+    function setEditReturnMode(enabled) {
+      editReturnMode = enabled;
+      saveButton.textContent = enabled ? 'Update Return Date/Time' : 'Save to MasterData';
+      connectionText.textContent = enabled ? 'Editing return details' : 'Ready for Google Sheet';
+    }
+
+    function setFieldValue(id, value) {
+      document.getElementById(id).value = value || '';
+    }
+
+    function loadEntryIntoForm(entry) {
+      setTransactionNumber(entry.transactionNumber);
+      setFieldValue('date', entry.date);
+      setFieldValue('courtesyCar', entry.courtesyCar);
+      setFieldValue('customerName', entry.customerName);
+      setFieldValue('mobileNo', entry.mobileNo);
+      setFieldValue('vehiclePlateNo', entry.vehiclePlateNo);
+      setFieldValue('jobCardNo', entry.jobCardNo);
+      setFieldValue('mileage', entry.mileage);
+      setFieldValue('dateTimeReleased', entry.dateTimeReleased);
+      setFieldValue('dateTimeReturned', entry.dateTimeReturned);
+      setFieldValue('serviceAdvisor', entry.serviceAdvisor);
+      setFieldValue('remarks', entry.remarks);
+      form.elements.eid.checked = Boolean(entry.eid);
+      form.elements.driversLicense.checked = Boolean(entry.driversLicense);
+      form.elements.releaseForm.checked = Boolean(entry.releaseForm);
+      setEditReturnMode(true);
+      updateSummary();
+    }
+
     function setTransactionNumber(value) {
       const transactionNumber = value || 'GM_0000001';
       transactionInput.value = transactionNumber;
@@ -776,6 +861,7 @@
     form.addEventListener('input', updateSummary);
     form.addEventListener('reset', () => {
       window.setTimeout(() => {
+        setEditReturnMode(false);
         setToday();
         clearEntryFields();
         loadNextTransactionNumber();
@@ -783,6 +869,35 @@
         message.className = 'message';
         message.textContent = '';
       }, 0);
+    });
+
+    searchButton.addEventListener('click', async () => {
+      if (!hasLiveUrl()) {
+        showMessage('Connect the Apps Script Web App URL first, then search.', 'error');
+        return;
+      }
+
+      const transactionNumber = transactionInput.value.trim();
+      if (!transactionNumber) {
+        showMessage('Enter a transaction number to search.', 'error');
+        return;
+      }
+
+      searchButton.disabled = true;
+      searchButton.textContent = '...';
+      showMessage(`Searching ${transactionNumber}...`, 'ok');
+
+      try {
+        const entry = await searchEntry(transactionNumber);
+        loadEntryIntoForm(entry);
+        showMessage(`Loaded ${transactionNumber}. Edit Date / Time Returned, then click Update.`, 'ok');
+      } catch (error) {
+        setEditReturnMode(false);
+        showMessage(error.message || 'Transaction number not found.', 'error');
+      } finally {
+        searchButton.disabled = false;
+        searchButton.textContent = 'Search';
+      }
     });
 
     form.addEventListener('submit', async (event) => {
@@ -795,20 +910,24 @@
       }
 
       saveButton.disabled = true;
-      saveButton.textContent = 'Saving...';
-      showMessage('Saving entry to MasterData...', 'ok');
+      saveButton.textContent = editReturnMode ? 'Updating...' : 'Saving...';
+      showMessage(editReturnMode ? 'Updating Date / Time Returned...' : 'Saving entry to MasterData...', 'ok');
 
       try {
-        const result = await saveEntry(getPayload());
-        showMessage(`Saved ${result.transactionNumber || 'entry'} to MasterData row ${result.row}.`, 'ok');
+        const payload = getPayload();
+        const result = editReturnMode ? await updateReturnedDateTime(payload) : await saveEntry(payload);
+        showMessage(editReturnMode
+          ? `Updated Date / Time Returned for ${result.transactionNumber}.`
+          : `Saved ${result.transactionNumber || 'entry'} to MasterData row ${result.row}.`, 'ok');
         form.reset();
+        setEditReturnMode(false);
         clearEntryFields();
         loadNextTransactionNumber();
       } catch (error) {
         showMessage(error.message || 'Could not save this entry.', 'error');
       } finally {
         saveButton.disabled = false;
-        saveButton.textContent = 'Save to MasterData';
+        saveButton.textContent = editReturnMode ? 'Update Return Date/Time' : 'Save to MasterData';
       }
     });
 
